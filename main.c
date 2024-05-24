@@ -20,11 +20,14 @@ void *Memory;
 
 
 
-void drawLine(vec3d v1, vec3d v2);
+void drawLine(vertex3d v1, vertex3d v2);
 void drawTriangle(triangle t);
 void drawTriangleLines(triangle t);
 void projectTriangle(triangle t, triangle *tProj, float **matrix4x4, int width, int height);
 void rotateTriangle(triangle *t, float xTheta, float yTheta, float zTheta);
+u32 interpolateColor(u32 color1, u32 color2, u32 color3, float w1, float w2, float w3);
+u32 getInterpolatedColor(vertex3d v1, vertex3d v2, vertex3d v3, float px, float py);
+
 
 
 void DrawPixel(int X, int Y, u32 Color) {
@@ -109,7 +112,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Cmd, int Cm
     //create projection matrix and project values
     float fNear = 0.1f;
     float fFar = 1000.0f;
-    float fov = 90;
+    float fov = 30;
     float aspectRatio = (float) ClientHeight/ (float) ClientWidth;
 
     
@@ -152,10 +155,8 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Cmd, int Cm
             //project and draw
             multProjMat(projMat, tTrans, &tProj, ClientWidth, ClientHeight);
             drawTriangle(tProj);
-            drawTriangleLines(tProj);
         }
 
-        
         Sleep(60);
         rotX+= 0.1;
         rotZ+= 0.1;
@@ -171,14 +172,14 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR Cmd, int Cm
 }
 
 
-bool edgeFunction(vec3d a, vec3d b, vec3d c){
+bool edgeFunction(vertex3d a, vertex3d b, vertex3d c){
     //check that vertices are 2 dim
     return ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x) >= 0);
 }
 
 void drawTriangle(triangle t){
     //***POINTS NEED TO CYCLE CLOCKWISE!!*****
-    vec3d a,b,c;
+    vertex3d a,b,c;
     a = t.vertices[0];
     b = t.vertices[1];
     c = t.vertices[2];
@@ -196,10 +197,10 @@ void drawTriangle(triangle t){
     int yEnd = floor(fmax(a.y, b.y));
     yEnd = floor(fmax(yEnd, c.y));
 
-    for(int yi = yStart; yi < yEnd; yi++){
-        for(int xi = xStart; xi < xEnd; xi++){
+    for(int yi = yStart; yi <= yEnd; yi++){
+        for(int xi = xStart; xi <= xEnd; xi++){
             //NOT CORRECT, WILL BE WRITTEN OVER!!!
-            vec3d pt;
+            vertex3d pt;
             pt.x = xi;
             pt.y = yi;
             pt.z = 0;
@@ -210,7 +211,7 @@ void drawTriangle(triangle t){
             inside &= edgeFunction(c,a,pt);
 
             if(inside == true){
-                DrawPixel((int) floorf(pt.x), (int)floor(pt.y), 0xFFFFFF);
+                DrawPixel((int) floorf(pt.x), (int)floor(pt.y), getInterpolatedColor(a,b,c, floorf(pt.x), (int)floor(pt.y)));
             }
 
             //IF YOU REMOVE DRAWTRIANGLELINES, THERE WILL BE MISSING PIXELS!!
@@ -221,7 +222,7 @@ void drawTriangle(triangle t){
     
 }
 
-void drawLine(vec3d a, vec3d b)
+void drawLine(vertex3d a, vertex3d b)
 {
    
     int x0, y0, x1, y1;
@@ -256,7 +257,7 @@ void drawLine(vec3d a, vec3d b)
 
 void drawTriangleLines(triangle t){
 
-    vec3d a,b,c;
+    vertex3d a,b,c;
     a = t.vertices[0];
     b = t.vertices[1];
     c = t.vertices[2];
@@ -274,6 +275,41 @@ void drawTriangleLines(triangle t){
     drawLine(b,c);
     drawLine(a,c);
 }
+
+u32 getInterpolatedColor(vertex3d v1, vertex3d v2, vertex3d v3, float px, float py) {
+    float detT = (v2.y - v3.y) * (v1.x - v3.x) + (v3.x - v2.x) * (v1.y - v3.y);
+    float w1 = ((v2.y - v3.y) * (px - v3.x) + (v3.x - v2.x) * (py - v3.y)) / detT;
+    float w2 = ((v3.y - v1.y) * (px - v3.x) + (v1.x - v3.x) * (py - v3.y)) / detT;
+    float w3 = 1 - w1 - w2;
+
+    return interpolateColor(v1.vertex_color, v2.vertex_color, v3.vertex_color, w1, w2, w3);
+}
+
+u32 interpolateColor(u32 color1, u32 color2, u32 color3, float w1, float w2, float w3) {
+    uint8_t a1 = (color1 >> 24) & 0xFF;
+    uint8_t r1 = (color1 >> 16) & 0xFF;
+    uint8_t g1 = (color1 >> 8) & 0xFF;
+    uint8_t b1 = color1 & 0xFF;
+
+    uint8_t a2 = (color2 >> 24) & 0xFF;
+    uint8_t r2 = (color2 >> 16) & 0xFF;
+    uint8_t g2 = (color2 >> 8) & 0xFF;
+    uint8_t b2 = color2 & 0xFF;
+
+    uint8_t a3 = (color3 >> 24) & 0xFF;
+    uint8_t r3 = (color3 >> 16) & 0xFF;
+    uint8_t g3 = (color3 >> 8) & 0xFF;
+    uint8_t b3 = color3 & 0xFF;
+
+    uint8_t a = (uint8_t)(w1 * a1 + w2 * a2 + w3 * a3);
+    uint8_t r = (uint8_t)(w1 * r1 + w2 * r2 + w3 * r3);
+    uint8_t g = (uint8_t)(w1 * g1 + w2 * g2 + w3 * g3);
+    uint8_t b = (uint8_t)(w1 * b1 + w2 * b2 + w3 * b3);
+
+    return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+
 
 
 

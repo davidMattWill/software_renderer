@@ -8,23 +8,23 @@ void createCube(mesh *mesh){
     mesh->tris = (triangle*)malloc(sizeof(triangle) * mesh->numTris);
 
     //face1
-    mesh->tris[0] = (triangle){(vec3d){0,0,0}, (vec3d){0,1,0}, (vec3d){1,1,0}};
-    mesh->tris[1] = (triangle){(vec3d){0,0,0}, (vec3d){1,1,0}, (vec3d){1,0,0}};
+    mesh->tris[0] = (triangle){(vertex3d){0,0,0, (u32)0xb3bb51}, (vertex3d){0,1,0,(u32)0x1acff6}, (vertex3d){1,1,0,(u32)0x35ded4}};
+    mesh->tris[1] = (triangle){(vertex3d){0,0,0,(u32)0x1acff6}, (vertex3d){1,1,0,(u32)0xe2d135}, (vertex3d){1,0,0,(u32)0xb441d0}};
     //face2
-    mesh->tris[2] = (triangle){(vec3d){1,0,0}, (vec3d){1,1,0}, (vec3d){1,1,1}};
-    mesh->tris[3] = (triangle){(vec3d){1,0,0}, (vec3d){1,1,1}, (vec3d){1,0,1}};
+    mesh->tris[2] = (triangle){(vertex3d){1,0,0, (u32)0xb441d0}, (vertex3d){1,1,0,(u32)0xdc6c3c}, (vertex3d){1,1,1,(u32)0xdc6c3c}};
+    mesh->tris[3] = (triangle){(vertex3d){1,0,0,(u32)0x1cf932}, (vertex3d){1,1,1,(u32)0x1acff6}, (vertex3d){1,0,1,(u32)0x871cf3}};
     //face3
-    mesh->tris[4] = (triangle){(vec3d){1,0,1}, (vec3d){1,1,1}, (vec3d){0,1,1}};
-    mesh->tris[5] = (triangle){(vec3d){1,0,1}, (vec3d){0,1,1}, (vec3d){0,0,1}};
+    mesh->tris[4] = (triangle){(vertex3d){1,0,1, (u32)0x1acff6}, (vertex3d){1,1,1, (u32)0xb441d0}, (vertex3d){0,1,1, (u32)0x35ded4}};
+    mesh->tris[5] = (triangle){(vertex3d){1,0,1, (u32)0xdc6c3c}, (vertex3d){0,1,1, (u32)0xe2d135}, (vertex3d){0,0,1, (u32)0x35ded4}};
     //face4
-    mesh->tris[6] = (triangle){(vec3d){0,0,1}, (vec3d){0,1,1}, (vec3d){0,1,0}};
-    mesh->tris[7] = (triangle){(vec3d){0,0,1}, (vec3d){0,1,0}, (vec3d){0,0,0}};
+    mesh->tris[6] = (triangle){(vertex3d){0,0,1, (u32)0xdc6c3c}, (vertex3d){0,1,1, (u32)0xe2d135}, (vertex3d){0,1,0, (u32)0x1cf932}};
+    mesh->tris[7] = (triangle){(vertex3d){0,0,1, (u32)0x35ded4}, (vertex3d){0,1,0, (u32)0x35ded4}, (vertex3d){0,0,0, (u32)0x35ded4}};
     //face5
-    mesh->tris[8] = (triangle){(vec3d){0,1,0}, (vec3d){0,1,1}, (vec3d){1,1,1}};
-    mesh->tris[9] = (triangle){(vec3d){0,1,0}, (vec3d){1,1,1}, (vec3d){1,1,0}};
+    mesh->tris[8] = (triangle){(vertex3d){0,1,0, (u32)0x24ea7f}, (vertex3d){0,1,1, (u32)0x35ded4}, (vertex3d){1,1,1, (u32)0xb441d0}};
+    mesh->tris[9] = (triangle){(vertex3d){0,1,0, (u32)0xb3bb51}, (vertex3d){1,1,1, (u32)0}, (vertex3d){1,1,0, (u32)0}};
     //face6
-    mesh->tris[10] = (triangle){(vec3d){1,0,1}, (vec3d){0,0,1}, (vec3d){0,0,0}};
-    mesh->tris[11] = (triangle){(vec3d){1,0,1}, (vec3d){0,0,0}, (vec3d){1,0,0}};
+    mesh->tris[10] = (triangle){(vertex3d){1,0,1,(u32)0xe2d135}, (vertex3d){0,0,1, (u32)0x1acff6}, (vertex3d){0,0,0, (u32)0xe2d135}};
+    mesh->tris[11] = (triangle){(vertex3d){1,0,1,(u32)0x1acff6}, (vertex3d){0,0,0,(u32)0xb3bb51}, (vertex3d){1,0,0,(u32)0}};
 
     //REORDER!!
    
@@ -83,8 +83,8 @@ void multProjMat(float **mat,  triangle t, triangle *tProj, int width, int heigh
 
         tProj->vertices[i].x *= 0.5 * (float)width;
         tProj->vertices[i].y *= 0.5 * (float)height; 
+        tProj->vertices[i].vertex_color = t.vertices[i].vertex_color;
     }
-  
 
 }
 
@@ -114,10 +114,7 @@ void rotateTriangleX(triangle t, triangle *tRot, float theta){
             tRot->vertices[i].x /= w;
             tRot->vertices[i].y /= w;
         tRot->vertices[i].z /= w;
-        
-
-        
-
+        tRot->vertices[i].vertex_color = t.vertices[i].vertex_color;
     }
   
 }
@@ -150,16 +147,17 @@ void rotateTriangleZ(triangle t, triangle *tRot, float theta){
             tRot->vertices[i].y /= w;
             tRot->vertices[i].z /= w;
         }
+        tRot->vertices[i].vertex_color = t.vertices[i].vertex_color;
 
     }
   
 }
 
 
-void calculateNormal(triangle t, vec3d *normal){
+void calculateNormal(triangle t, vertex3d *normal){
     //ORDER IS IMPORTANT,  WONT WORK IF VERTICES ARE NOT CLOCKWISE
     
-    vec3d A, B;
+    vertex3d A, B;
     //vertex 1 - vertex 0
     A.x = t.vertices[1].x - t.vertices[0].x;
     A.y = t.vertices[1].y - t.vertices[0].y;
@@ -175,54 +173,16 @@ void calculateNormal(triangle t, vec3d *normal){
 
 }
 
-
-/*
-
-void rotateTriangleX(triangle t, triangle *tRot, float theta){
-    float mat[3][3] = {0};
-    mat[0][0] = 1;
-    mat[1][1] = cosf(theta);
-    mat[1][2] = -sinf(theta);
-    mat[2][1] = sinf(theta);
-    mat[2][2] = cos(theta);
-
-    float x,y,z;
-    for(int i = 0; i < 3; i++){
-        x = t.vertices[i].x;
-        y = t.vertices[i].y;
-        z = t.vertices[i].z;
-
-        tRot->vertices[i].x = x * mat[0][0] + y*mat[0][1] + z*mat[0][2];
-        tRot->vertices[i].y = x * mat[1][0] + y*mat[1][1] + z*mat[1][2];
-        tRot->vertices[i].z = x * mat[2][0] + y*mat[2][1] + z*mat[2][2];
-
-
-    }
+vec3d crossProduct(triangle t){
+    vertex3d v1,v2,v3;
+    v1 = t.vertices[0]; v2 = t.vertices[1]; v3 = t.vertices[2];
+    
+    vec3d cross;
+    cross.x = (v1.y * v2.z) - (v1.z * v2.y);
+    cross.y = (v1.x * v2.z) - (v1.z - v2.x);
+    cross.z = (v1.x * v2.y) - (v1.y * v1.x);
+    return cross;
 }
-
-
-void rotateTriangleZ(triangle t, triangle *tRot, float theta){
-    float mat[3][3] = {0};
-    mat[0][0] = cosf(theta);
-    mat[0][1] = -sinf(theta);
-    mat[1][0] = sinf(theta);
-    mat[1][1] = cosf(theta);
-    mat[2][2] = 1;
-
-    float x,y,z;
-    for(int i = 0; i < 3; i++){
-        x = t.vertices[i].x;
-        y = t.vertices[i].y;
-        z = t.vertices[i].z;
-
-        tRot->vertices[i].x = x * mat[0][0] + y*mat[0][1] + z*mat[0][2];
-        tRot->vertices[i].y = x * mat[1][0] + y*mat[1][1] + z*mat[1][2];
-        tRot->vertices[i].z = x * mat[2][0] + y*mat[2][1] + z*mat[2][2];
-
-
-    }
-}
-*/
 
 
 
